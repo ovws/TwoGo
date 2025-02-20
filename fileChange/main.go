@@ -81,9 +81,51 @@ func readByIoUtil() {
 	fmt.Println(string(content))
 }
 
+func write() {
+	fileObj, err := os.OpenFile("test.txt", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		fmt.Println("open file err:", err)
+		return
+
+	}
+	defer fileObj.Close()
+	str := "田东晓最可爱啦！"
+	fileObj.Write([]byte(str))
+	fileObj.WriteString("hello world\n")
+	fileObj.Close()
+}
+
+func writeByBufio() {
+	fileObj, err := os.OpenFile("test.txt", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		fmt.Println("open file err:", err)
+		return
+
+	}
+	defer fileObj.Close()
+	writer := bufio.NewWriter(fileObj)
+	str := "田东晓最可爱啦！"
+	writer.WriteString(str)
+	writer.Flush()
+	fileObj.Close()
+}
+
+func writeByIoUtil() {
+	str := "田东晓同学最乖了啦！"
+	err := ioutil.WriteFile("test.txt", []byte(str), 0644)
+	// ioutil.WriteFile("test.txt", []byte(str), 0644)
+	if err != nil {
+		fmt.Printf("%v\n", err)
+		return
+	}
+}
+
 func main() {
 	// readFromFile()
 	// readall()
 	// readByBufio()
-	readByIoUtil()
+	// readByIoUtil()
+	// write()
+	// writeByBufio()
+	writeByIoUtil()
 }
