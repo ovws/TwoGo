@@ -6,56 +6,41 @@ import (
 )
 
 func main() {
-	// fmt.Println(time.Now())
-	// year := time.Now().Year()
-	// month := time.Now().Month()
-	// day := time.Now().Day()
-	// hour := time.Now().Hour()
-	// minute := time.Now().Minute()
-	// second := time.Now().Second()
-	// fmt.Printf("现在是：%d年%d月%d日%d时%d分%d秒", year, month, day, hour, minute, second)
-	// timeStamp1 := time.Now().Unix()
-	// timeStamp2 := time.Now().UnixNano()
-	// fmt.Println()
-	// fmt.Println(timeStamp1)
-	// fmt.Println(timeStamp2)
-
-	// // 通过时间戳获取时间
-	// timeObj := time.Unix(timeStamp1, 0)
-	// fmt.Println(timeObj)
-
-	// n := 3
-	// time.Sleep(time.Duration(n) * time.Second)
-
+	// 获取当前时间并展示各种格式
 	now := time.Now()
-	fmt.Println(now)
-	t2 := now.Add(time.Hour * 1)
-	fmt.Println(t2)
-	// for tmp := range time.Tick(time.Millisecond * 3) {
-	// 	fmt.Println(tmp)
-	// }
-	// ret1 := now.Format("2006-01-02 03:04:05 PM")
-	// fmt.Println(ret1)
+	fmt.Println("Current time (default format):", now)
 
-	loc, err := time.LoadLocation("Asia/Shanghai")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	// ret2 := now.In(loc).Format("2006-01-02 03:04:05 PM")
-	// fmt.Println(ret2)
-	timeStr := "2021--01--01 00:00:00"
-	timeObj, err := time.Parse("2006--01--02 15:04:05", timeStr)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	fmt.Println(timeObj)
-	timeObj2, err := time.ParseInLocation("2006--01--02 15:04:05", timeStr, loc)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	fmt.Println(timeObj2)
+	// 展示基本时间运算
+	oneHourLater := now.Add(time.Hour * 1)
+	fmt.Println("Time after 1 hour:", oneHourLater)
 
+	// 时区处理
+	shanghaiLoc, err := time.LoadLocation("Asia/Shanghai")
+	if err != nil {
+		fmt.Println("Failed to load location:", err)
+		return
+	}
+
+	// 时间解析示例
+	const (
+		inputLayout    = "2006-01-02 15:04:05"
+		outputLayout   = "2006年01月02日 03:04:05 PM MST"
+		nonStandardStr = "2021-01-01 00:00:00"
+	)
+
+	// 解析普通时间字符串
+	parsedTime, err := time.Parse(inputLayout, nonStandardStr)
+	if err != nil {
+		fmt.Println("Time parse error:", err)
+		return
+	}
+	fmt.Println("Parsed time (local):", parsedTime.Format(outputLayout))
+
+	// 带时区的解析
+	parsedTimeWithLoc, err := time.ParseInLocation(inputLayout, nonStandardStr, shanghaiLoc)
+	if err != nil {
+		fmt.Println("Time parse with location error:", err)
+		return
+	}
+	fmt.Println("Parsed time (Shanghai):", parsedTimeWithLoc.In(shanghaiLoc).Format(outputLayout))
 }
