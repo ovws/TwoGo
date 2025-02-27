@@ -1,0 +1,150 @@
+global: #全局配置
+    namespace: Production #环境类型，分正式Production和非正式Development两种类型
+    env_name: formal #环境名称，非正式环境下多环境的名称
+    container_name: formal.rdelivery.res_manager.gz100008 #容器名称
+    local_ip: 21.18.49.101 #本地IP，容器内为容器ip，物理机或虚拟机为本机ip
+    admin_port: 12754 #管理命令服务端口
+    enable_set: N #是否启用set
+    full_set_name: #set名
+server:
+    app: rdelivery #业务的应用名
+    server: res_manager #进程服务名
+    bin_path: /usr/local/trpc/bin/ #二进制可执行文件和框架配置文件所在路径
+    conf_path: /usr/local/trpc/conf/ #业务配置文件所在路径
+    data_path: /usr/local/trpc/data/ #数据文件所在路径       
+    filter:
+        - galileo
+        - recovery
+        - validation
+    admin:
+        ip: 21.18.49.101 #ip  local_ip  trpc_admin_ip 都可以
+        port: 12754 #
+        read_timeout: 3000 #ms. 请求被接受到请求信息被完全读取的超时时间设置，防止慢客户端
+        write_timeout: 60000 #ms. 处理的超时时间
+    service: #业务服务提供的service，可以有多个
+        - name: trpc.rdelivery.res_manager.ResManager #service的路由名称，请将ReplaceMe改成自己的service名字，app server占位符不要改
+          network: tcp #网络监听类型  tcp udp
+          protocol: http #应用层协议 trpc http
+          timeout: 5000 #请求最长处理时间 单位 毫秒
+          registry: polaris #服务启动时使用的服务注册方式
+          ip: 21.18.49.101 #容器内ip
+          port: 12748
+        - name: trpc.rdelivery.res_manager.ResManagerTrpc #service的路由名称，请将ReplaceMe改成自己的service名字，app server占位符不要改
+          network: tcp #网络监听类型  tcp udp
+          protocol: trpc #应用层协议 trpc http
+          timeout: 2000 #请求最长处理时间 单位 毫秒
+          registry: polaris #服务启动时使用的服务注册方式
+          ip: 21.18.49.101 #容器内ip
+          port: 12749
+        #- name: trpc.rdelivery.res_manager.consumer                                                      #service的路由名称 如果使用的是123平台，需要使用trpc.rdelivery.res_manager.consumer  
+        #  address: 9.146.150.229:9092?topics=patch_topic&group=patch_consumer      #kafka consumer broker address，version如果不设置则为1.1.1.0，部分ckafka需要指定0.10.2.0
+        #  protocol: kafka                                                                     #应用层协议 
+        #  timeout: 90000                                                                       #框架配置,与sarama配置无关
+        #  platform_not_registry: true      
+        - name: trpc.rdelivery.res_manager.so_scan_consumer #service的路由名称 如果使用的是123平台，需要使用trpc.rdelivery.res_manager.consumer  
+          address: 9.146.150.229:9092?topics=so_scan_topic&group=so_scan_consumer #kafka consumer broker address，version如果不设置则为1.1.1.0，部分ckafka需要指定0.10.2.0
+          protocol: kafka #应用层协议 
+          timeout: 20000 #框架配置,与sarama配置无关
+          platform_not_registry: true
+client:
+    filter:
+        - galileo
+    namespace: Production
+    timeout: 1000
+    service:
+        - name: trpc.http.devops.openapi #下游http服务的service name 
+          target: dns://devops.apigw.o.oa.com #下游http服务的请求地址
+          timeout: 1000
+          #      serialization: 0                             #上游使用get方式请求时，必须设置下游的序列化方式
+        - name: trpc.rdelivery.res_manager.producer #生产者服务名自己随便定义         
+          target: kafka://9.146.150.229:9092?topic=patch_topic&clientid=patch_consumer&compression=none
+          timeout: 8000 #当前这个请求最长处理时间
+        - name: trpc.rdelivery.res_manager.so_scan_producer #生产者服务名自己随便定义         
+          target: kafka://9.146.150.229:9092?topic=so_scan_topic&clientid=so_scan&compression=none
+          timeout: 8000 #当前这个请求最长处理时间
+plugins:
+    config:
+        rainbow: # 七彩石配置中心                     
+            providers:
+                - name: rainbow # provider名字
+                  appid: 6b2c20b6-6f71-497c-885f-1a0358c73315 # rainbow配置的项目id，查看位置在rainbow管理平台的“配置中心/基础信息页面下的项目id”
+                  group: res_manager # 配置所属分组，rainbot_tconf 版用 123 的 server 名
+    registry:
+        polaris: #名字注册服务的远程对象
+            register_self: false #是否框架自注册
+            heartbeat_interval: 3000 #名字注册服务心跳上报间隔
+            address_list: 9.141.66.8:8081,9.141.66.121:8081,9.141.66.27:8081,9.141.66.125:8081,9.136.124.80:8081,9.136.121.211:8081,9.136.124.240:8081,9.136.125.12:8081,9.136.124.229:8081,9.141.66.84:8081 #名字服务远程地址列表, ip1:port1,ip2:port2,ip3:port3
+            protocol: grpc #北极星交互协议支持 http，grpc，trpc
+            service:
+                - instance_id: 547474f2cdb6fa0cdbc757df3d05a4bc951d8351 #服务注册所需要的 id
+                  name: trpc.rdelivery.res_manager.ResManager
+                  namespace: Production #环境类型，分正式production和非正式development两种类型
+                  token: ba81224f2057461bb9cde5ffc9bc8757 #服务注册所需要的 token
+                - instance_id: 53c6e10a5ab9ecd0ab2663fa3aa8cfb7a069bac6 #服务注册所需要的 id
+                  name: trpc.rdelivery.res_manager.ResManagerTrpc
+                  namespace: Production #环境类型，分正式production和非正式development两种类型
+                  token: a19461ac86d34b4091eb6ca6d01e590e #服务注册所需要的 token
+    selector:
+        polaris:
+            address_list: 9.141.66.8:8081,9.141.66.121:8081,9.141.66.27:8081,9.141.66.125:8081,9.136.124.80:8081,9.136.121.211:8081,9.136.124.240:8081,9.136.125.12:8081,9.136.124.229:8081,9.141.66.84:8081 #名字服务远程地址列表
+            protocol: grpc #北极星交互协议支持 http，grpc，trpc
+            discovery:
+                refresh_interval: 10000 # 北极星服务发现刷新间隔，123默认10000，即10s
+    log:
+        default:
+            - writer: file #本地文件日志
+              level: debug #本地文件滚动日志的级别
+              writer_config: #本地文件输出具体配置
+                log_path: /usr/local/trpc/log/ #本地文件日志路径
+                filename: trpc.log #本地文件日志文件名
+                roll_type: size #文件滚动类型,size为按大小滚动
+                max_age: 7 #最大日志保留天数
+                max_size: 500 #本地文件滚动日志的大小 单位 MB
+                max_backups: 100 #最大日志文件数
+                compress: false #日志文件是否压缩
+            - writer: file #本地文件日志
+              level: error #本地文件滚动日志的级别
+              writer_config: #本地文件输出具体配置
+                log_path: /usr/local/trpc/log/ #本地文件日志路径
+                filename: trpc_error.log #本地文件日志文件名
+                roll_type: size #文件滚动类型,size为按大小滚动
+                max_age: 7 #最大日志保留天数
+                max_size: 500 #本地文件滚动日志的大小 单位 MB
+                max_backups: 100 #最大日志文件数
+                compress: false #日志文件是否压缩
+            - writer: galileo # 远程日志
+              level: debug # 优先选择本日志级别，未配置会使用telemetry中的level
+    metrics:
+    telemetry: # 注意缩进层级关系
+        galileo:
+            verbose: error # 伽利略自身的诊断日志级别，取值范围：debug, info, error, none，日志输出在 ./galileo/galileo.log 中。
+            config: #配置
+                metrics_config: # 指标配置
+                    enable: true # 是否启用指标
+                traces_config: # 追踪配置
+                    enable: true # 是否启用追踪，默认 true。如果设置为 false，会中断 trace，让上游的调用链不完整。v0.3.7 以上生效。
+                    processor: # 追踪数据处理相关配置
+                        sampler: # 采样器配置
+                            fraction: 1 # 采样比例，默认 0.0001。
+                            error_fraction: 1
+                            enable_min_sample: true # 启用每分钟每接口最少 2 个请求采样，默认 true。采样率为 0 时需要设置为 false 才能完全停止采样
+                        disable_trace_body: false # 若为 true，则关闭 trace 中对 req 和 rsp 的 body 上报，可以大幅提高上报性能。默认 true。
+                        enable_deferred_sample: false # 开启延迟采样（请求处理完采样），默认 false。0.3.0 以上生效。
+                        deferred_sample_error: false # 开启延迟采样出错采样（请求处理完出现错误采样），默认 false。0.3.0 以上生效。
+                        deferred_sample_slow_duration_ms: 1000 # 慢操作阈值（请求耗时超过该值采样），单位 ms，默认 1000。0.3.0 以上生效。
+                        disable_parent_sampling: false # 忽略上游的采样结果，默认 false。v0.3.7 以上生效。
+                logs_config: # 日志配置
+                    enable: true # 是否启用日志
+                    processor: # 日志数据处理相关配置
+                        only_trace_log: false # 是否只上报命中 trace 的 log，默认关闭
+                        must_log_traced: true # 是否命中 traced 不管任何级别日志都上报，默认关闭。v0.3.22 以上生效
+                        trace_log_mode: 0 # debug 访问日志 (access_log) 打印模式，0,1：单行打印，3：多行打印，2：不打印，默认 0
+                        level: debug # 上报到远程的日志级别，默认 error
+                        enable_recovery: true # 是否捕获 panic，默认 true
+                profiles_config: # profile配置
+                    enable: true # 是否启用 profile
+                    processor: # profile 数据处理相关配置
+                        profile_types: ["cpu", "heap"] # 采集 profile 的类型，支持 cpu、heap、mutex、block、goroutine，默认开启 cpu 和 heap。
+                version: 1 # 版本号，默认 0，此版本号用于控制远程配置和本地配置的优先级，版本号高的优先，一般设置成 1 即可。
+            resource: # resource 资源信息，在 SDK 运行期间不会改变。resource 中的字段一般不需要配置，默认会填充。
+                platform: PCG-123 # 服务部署的平台，如 PCG-123, STKE, 默认 PCG-123
